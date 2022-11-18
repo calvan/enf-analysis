@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, wait
 from scipy.fft import rfft, rfftfreq
-from scipy.signal import stft, windows, butter, sosfilt, spectrogram
+from scipy.signal import stft, windows, butter, sosfilt
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,7 +15,8 @@ logger.setLevel(LOGGER_LEVEL)
 class ENFSuperpixelAnalyzer:
 
     def __init__(self, destination, fps=30, expected_enf_frequency_in_hz=10., show_plots=True, filename_prefix=None,
-                 bandpass_order=6, bandpass_width=.3, fps_real=30., save_data=True, samples_stft=256, nfft=8192):
+                 bandpass_order=6, bandpass_width=.3, fps_real=30., save_data=True, samples_stft=512,
+                 samples_stft_me=1024, nfft=8192):
         self.__save_data = save_data
         self.__fps_real = fps_real
         self.__filename_prefix = filename_prefix
@@ -26,6 +27,7 @@ class ENFSuperpixelAnalyzer:
         self.__destination = destination
         self.__nfft = nfft
         self.__samples_stft = samples_stft
+        self.__samples_stft_me = samples_stft_me
         self.__bandpass_order = bandpass_order
         self.__bandpass_width = bandpass_width
 
@@ -33,7 +35,7 @@ class ENFSuperpixelAnalyzer:
         if self.__save_data or self.__show_plots:
             freq = rfftfreq(data.size, d=(1.0 / self.__fps_real))
             fft = rfft(data)
-            plt.figure()
+            plt.figure("FFT")
             plt.title(title)
             plt.plot(freq, np.abs(fft))
             self.__save_plot("fft")
@@ -41,7 +43,7 @@ class ENFSuperpixelAnalyzer:
     def __enf_multi_plot(self, enf_plot_data, label):
         if self.__save_data or self.__show_plots:
             ax = plt.figure()
-            plt.title("ENF")
+            plt.title("ENF: max energy vs. weighted energy")
             plt.plot(enf_plot_data[0], label=label[0])
             plt.plot(enf_plot_data[1], label=label[1])
             ax.legend()
@@ -49,7 +51,7 @@ class ENFSuperpixelAnalyzer:
 
     def __enf_plot(self, enf_plot_data, label):
         if self.__save_data or self.__show_plots:
-            ax = plt.figure()
+            ax = plt.figure(label)
             plt.title("ENF")
             plt.plot(enf_plot_data, label=label)
             ax.legend()
@@ -59,9 +61,9 @@ class ENFSuperpixelAnalyzer:
         if self.__filename_prefix is not None and self.__save_data:
             plt.savefig(self.__get_filename(suffix))
 
-    def save_numpy_data(self, numpy_data, name, ds_enf_id: int):
+    def save_numpy_data(self, numpy_data, name, prefix=None):
         if self.__save_data:
-            np.save(self.__get_filename(name, extension='npy', filename_prefix=ds_enf_id), numpy_data)
+            np.save(self.__get_filename(name, extension='npy', filename_prefix=prefix), numpy_data)
 
     def read_numpy_data(self, infix, ds_enf_id: int):
         if self.__filename_prefix is not None:
@@ -89,6 +91,8 @@ class ENFSuperpixelAnalyzer:
         enf_candidates = self.__enf_with_stft_superpixel(superpixel_filtered, self.__samples_stft)
         representative = np.mean(enf_candidates, axis=0)
         pearson_result = Pearson.pearson_per_superpixel(enf_candidates)
+        self.__enf_plot(representative, "repräsentative ENF")
+        plt.show(block=False) if self.__show_plots else plt.close()
         return pearson_result, representative
 
     def __filter_superpixel(self, mean_per_superpixel):
@@ -113,18 +117,17 @@ class ENFSuperpixelAnalyzer:
                       (self.__expected_enf_frequency_in_hz + self.__bandpass_width) / (.5 * self.__fps_real)],
                      btype='bandpass', output='sos')
         mean_per_frame_filtered = sosfilt(sos, mean_per_frame)
-        max_freq_stft, weighted_energy = self.__enf_with_stft(mean_per_frame_filtered, self.__samples_stft)
+        max_energy_stft, weighted_energy = self.__enf_with_stft(mean_per_frame_filtered, self.__samples_stft_me)
         self.__specgram("Spektrogramm", mean_per_frame_filtered)
-        self.__fft(mean_per_frame_filtered, "mean")
+        self.__fft(mean_per_frame_filtered, "FFT")
+        plt.show(block=False) if self.__show_plots else plt.close()
+        self.__enf_multi_plot((max_energy_stft, weighted_energy), label=("max_energy", "weighted_energy"))
         plt.show() if self.__show_plots else plt.close()
-        self.__enf_multi_plot((max_freq_stft, weighted_energy),
-                              label=("max_freq", "weighted_energy"))
-        plt.show() if self.__show_plots else plt.close()
-        return max_freq_stft, weighted_energy
+        return max_energy_stft, weighted_energy
 
     def __specgram(self, title: str, data):
         if self.__save_data or self.__show_plots:
-            plt.figure()
+            plt.figure("Spektrogramm")
             plt.title(title)
             hann = plt.mlab.window_hanning(np.ones(self.__samples_stft))
             plt.specgram(data, Fs=self.__fps, window=hann, NFFT=self.__samples_stft,
@@ -132,20 +135,9 @@ class ENFSuperpixelAnalyzer:
             plt.ylabel('Frequenz [Hz]')
             plt.xlabel('Zeit [sec]')
             plt.ylim([9, 11])
-            self.__save_plot("specgram")
+            self.__save_plot("spectrogram")
             if not self.__show_plots:
                 plt.close()
-
-    def __spectrogram_old(self, data):
-        ham = plt.mlab.window_hanning(np.ones(self.__fps))
-        freq, time, spec = spectrogram(data, nperseg=self.__fps, noverlap=int(self.__fps * self.__overlap),
-                                       nfft=self.__nfft, fs=self.__fps, window=ham, return_onesided=True,
-                                       scaling='spectrum')
-        max_freq = freq[np.argmax(spec, axis=0)]
-        inst_freq = pd.Series(max_freq)
-        inst_freq.index = (inst_freq.index * .5).astype('int32')
-        inst_freq = inst_freq.groupby(inst_freq.index).mean()
-        return inst_freq
 
     def __correlation_plot(self, correlated, description=""):
         if self.__show_plots or self.__save_data:
@@ -191,14 +183,14 @@ class ENFSuperpixelAnalyzer:
         f1, t1, Zxx = stft(data, fs=1, nperseg=stft_samples, noverlap=overlap_stft, window=hann,
                            nfft=self.__nfft)
         f1_real = f1 * self.__fps_real
-        max_freq_stft = f1_real[np.argmax(np.abs(Zxx), axis=0)]
+        max_energy_stft = f1_real[np.argmax(np.abs(Zxx), axis=0)]
         f_low = self.__expected_enf_frequency_in_hz - self.__bandpass_width
         f_high = self.__expected_enf_frequency_in_hz + self.__bandpass_width
         freq_idx = np.where((f1_real > f_low) & (f1_real < f_high))
         freq = f1_real[freq_idx]
         energy = np.abs(Zxx)[freq_idx]
         weighted_energy_freq = np.sum(energy * freq[:, None], axis=0) / np.sum(energy, axis=0)
-        return max_freq_stft, weighted_energy_freq
+        return max_energy_stft, weighted_energy_freq
 
     def correlate(self, extracted_enf: np.ndarray, frequency_data: pd.Series, description="") -> ENFExtractionResult:
         data_frame = pd.DataFrame(frequency_data)
