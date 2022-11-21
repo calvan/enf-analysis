@@ -105,13 +105,13 @@ class MotionDetectorGSOC:
     def get_superpixel_indices(self):
         return self.__superpixels_indices
 
-    def show_image(self, segmented_superpixel):
+    def show_image(self, segmented_superpixel, title="result"):
         uu = np.zeros(self.__first_frame.shape, dtype='uint8')
         indices = np.add(np.where(segmented_superpixel), 1)[0]
         for i in indices:
             loc = np.where(self.__segmented_superpixel == i)
             uu[loc] = self.__first_frame[loc]
-        cv2.imshow('result', mark_boundaries(uu, self.__segmented_superpixel, color=(0, 0, 1)))
+        cv2.imshow(title, mark_boundaries(uu, self.__segmented_superpixel, color=(0, 0, 1)))
 
     def save_image(self, filename, segmented_superpixel=None):
         if segmented_superpixel is not None:

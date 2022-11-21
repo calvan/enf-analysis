@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 import pandas as pd
 from datetime import datetime
 from sys import platform
@@ -60,21 +62,10 @@ def get_enf_truth_path():
 
 def read_csv(csv_file) -> pd.Series:
     logger.debug(f'csv: loading {csv_file}')
-    if "GDE" in csv_file:
-        recorded_enf = pd.read_csv(csv_file, parse_dates=['time'], skiprows=0, sep=',', decimal='.')
-        return recorded_enf.set_index('time').squeeze()
-    # else:
-    #     return read_csv_netztransparenz(csv_file)
+    ground_truth = pd.read_csv(csv_file, parse_dates=['time'], skiprows=0, sep=',', decimal='.')
+    return ground_truth.set_index('time').squeeze()
 
 
-#
-#
-# def read_csv_netztransparenz(csv_file) -> pd.Series:
-#     recorded_enf = pd.read_csv(csv_file,
-#                                usecols=[0, 1, 4], parse_dates=[['Datum', 'von']], skiprows=0, sep=';', decimal=',')
-#
-#     recorded_enf.rename(columns={'Datum_von': 'time'}, inplace=True)
-#     return recorded_enf.set_index('time').squeeze()
 #
 #
 # def slice_csv_data(csv_data, timestamp, enf_length, offset=30):

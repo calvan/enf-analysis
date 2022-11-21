@@ -16,9 +16,9 @@ class ENFExtractionResult:
     def get_timestamp(self):
         return self.data_frame.index[self.max_correlation_index]
 
-    def show_plot(self, margin_in_sec=10, title=""):
+    def show_plot(self, margin_in_sec=10, title="", block=True):
         self.__prepare_plot(margin_in_sec, title=title)
-        plt.show()
+        plt.show(block=block)
 
     def __prepare_plot(self, margin_in_sec=10, title=""):
         show_from_index = self.max_correlation_index - margin_in_sec

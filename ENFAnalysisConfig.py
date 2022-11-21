@@ -12,10 +12,10 @@ class ENFAnalysisConfig:
         self.samples_max_energy = None
         self.motion_detection = None
         self.use_video_data_cache = None
-        self.use_enf_data_cache = None
         self.lightness_threshold = None
         self.bandpass_order = None
         self.bandpass_width = None
         self.network_frequency = None
         self.ground_truth = None
         self.disable_plots = None
+        self.skip_seconds = None

@@ -50,7 +50,7 @@ class ENFSuperpixelVideoProcessor:
             makedirs(self.__data_dir, exist_ok=True)
             np.save(self.get_mean_data_filename(), mean_per_superpixel)
         if self.__show_final_image:
-            self.__md.show_image(self.__md.get_steady_superpixel_indices())
+            self.__md.show_image(self.__md.get_steady_superpixel_indices(), title="Segmented image result")
             cv2.waitKey()
             cv2.destroyAllWindows()
         if not self.__dry_run and self.__data_dir and self.__save_img:
@@ -77,7 +77,7 @@ class ENFSuperpixelVideoProcessor:
             self.__md.show_motionless_image()
         self.__mmc.next_frame(frame)
         if frame_nr % 50 == 0:
-            logger.debug(f'{frame_nr + self.__vg.get_start_frame_nr()} / {self.__vg.total_frames()}')
+            logger.debug(f'frame {frame_nr + self.__vg.get_start_frame_nr()} / {self.__vg.total_frames()}')
         # cv2.waitKey()
         if self.__wait_key:
             if cv2.waitKey(12) == ord('q'):

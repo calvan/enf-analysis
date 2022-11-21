@@ -12,7 +12,7 @@ logger.setLevel(LOGGER_LEVEL)
 class VideoGrabber:
 
     # TODO: get video data, not by reference
-    def __init__(self, videofile, start_frame_nr=0, end_frame=None, video: Video = None):
+    def __init__(self, videofile, start_frame_nr=0, end_frame=None, video: Video = None, silent=False):
         self.__fps = 0
         self.__frames_to_process = 0
         self.__videofile = videofile
@@ -30,13 +30,14 @@ class VideoGrabber:
             video.fps_real = self.__fps
             video.fps = round(self.__fps)
             video.duration = round(self.duration())
-        logger.debug(f'videofile: {videofile}')
-        logger.debug(f'fps_real: {self.__fps}')
-        logger.debug(f'fps: {round(self.__fps)}')
-        logger.debug(f'frames to process: {self.__frames_to_process}')
-        logger.debug(f'duration: {self.duration()}')
-        logger.debug(f'total frames: {self.__total_frames}')
-        logger.debug(f'total duration: {self.total_duration()}')
+        if not silent:
+            logger.debug(f'videofile: {videofile}')
+            logger.debug(f'fps_real: {self.__fps}')
+            logger.debug(f'fps: {round(self.__fps)}')
+            logger.debug(f'frames to process: {self.__frames_to_process}')
+            logger.debug(f'duration: {self.duration()}')
+            logger.debug(f'total frames: {self.__total_frames}')
+            logger.debug(f'total duration: {self.total_duration()}')
 
     def videofile(self):
         return Path(self.__videofile).name

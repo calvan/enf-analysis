@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOGGER_LEVEL)
 
 
-class PearsonResult:
+class ENFMetricResult:
     max: float = -1.
     mean: float = -1.
     median: float = -1.
@@ -15,11 +15,11 @@ class PearsonResult:
         return f'max: {self.max}, mean: {self.mean}, median: {self.median}, corr(top_two): {self.top_two}'
 
 
-class Pearson:
+class ENFMetric:
 
     @staticmethod
-    def pearson_per_superpixel(mean_intensity_per_superpixel_and_frame) -> PearsonResult:
-        pearson_per_superpixel_result = Pearson.__calc_pearson_per_superpixel(mean_intensity_per_superpixel_and_frame)
+    def calc_metric(mean_intensity_per_superpixel_and_frame) -> ENFMetricResult:
+        pearson_per_superpixel_result = ENFMetric.__calc_pearson_per_superpixel(mean_intensity_per_superpixel_and_frame)
         ranked_pearson_per_superpixel = {key: val for key, val in
                                          sorted(pearson_per_superpixel_result.items(), key=lambda ele: ele[0],
                                                 reverse=True)}
@@ -27,13 +27,13 @@ class Pearson:
         top_two = list(ranked_pearson_per_superpixel)[0:2]
 
         pearson_per_superpixel_result_list = list(pearson_per_superpixel_result.keys())
-        p = PearsonResult()
-        p.mean = Pearson.round(np.nanmean(pearson_per_superpixel_result_list))
-        p.median = Pearson.round(np.nanmedian(pearson_per_superpixel_result_list))
-        p.max = Pearson.round(np.nanmax(pearson_per_superpixel_result_list))
-        p.top_two = Pearson.round(Pearson.pearson(pearson_per_superpixel_result[top_two[0]],
-                                                  pearson_per_superpixel_result[top_two[1]]))
-        return p
+        metric = ENFMetricResult()
+        metric.mean = ENFMetric.round(np.nanmean(pearson_per_superpixel_result_list))
+        metric.median = ENFMetric.round(np.nanmedian(pearson_per_superpixel_result_list))
+        metric.max = ENFMetric.round(np.nanmax(pearson_per_superpixel_result_list))
+        metric.top_two = ENFMetric.round(ENFMetric.pearson(pearson_per_superpixel_result[top_two[0]],
+                                                           pearson_per_superpixel_result[top_two[1]]))
+        return metric
 
     @staticmethod
     def round(value):
@@ -46,7 +46,6 @@ class Pearson:
         for ek_n in mean_intensity_per_superpixel_and_frame:
             if np.std(ek_n, dtype='float32') != 0:
                 pearson_result[np.corrcoef(ek_n, representative)[0][1]] = ek_n
-                # pearson_result[Pearson.pearson(ek_n, representative)] = ek_n
         return pearson_result
 
     @staticmethod

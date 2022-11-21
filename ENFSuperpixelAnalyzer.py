@@ -1,4 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, wait
+from typing import Tuple
+
 from scipy.fft import rfft, rfftfreq
 from scipy.signal import stft, windows, butter, sosfilt
 import matplotlib.pyplot as plt
@@ -6,7 +8,7 @@ import numpy as np
 
 from ENFExtractionResult import ENFExtractionResult
 from base_functions import *
-from Pearson import Pearson
+from ENFMetric import ENFMetric, ENFMetricResult
 
 logger = logging.getLogger(__file__)
 logger.setLevel(LOGGER_LEVEL)
@@ -78,7 +80,7 @@ class ENFSuperpixelAnalyzer:
         else:
             return f'{self.__destination}/{self.__filename_prefix}_{suffix}.{extension}'
 
-    def detect_enf(self, mean_per_superpixel):
+    def detect_enf(self, mean_per_superpixel) -> Tuple[ENFMetricResult, np.ndarray]:
         if mean_per_superpixel.shape[0] == 0:
             logger.warning("no data present: mean_per_superpixel is empty")
             return None
@@ -90,10 +92,10 @@ class ENFSuperpixelAnalyzer:
             return
         enf_candidates = self.__enf_with_stft_superpixel(superpixel_filtered, self.__samples_stft)
         representative = np.mean(enf_candidates, axis=0)
-        pearson_result = Pearson.pearson_per_superpixel(enf_candidates)
+        enf_metric = ENFMetric.calc_metric(enf_candidates)
         self.__enf_plot(representative, "repräsentative ENF")
         plt.show(block=False) if self.__show_plots else plt.close()
-        return pearson_result, representative
+        return enf_metric, representative
 
     def __filter_superpixel(self, mean_per_superpixel):
         means_mean = np.mean(mean_per_superpixel, axis=1)
@@ -103,7 +105,7 @@ class ENFSuperpixelAnalyzer:
         # remove Superpixel without ENF information e.g. overexposed
         return enf_snr[np.where(var > .01)]
 
-    def extract_enf(self, mean_per_superpixel, mode='mean'):
+    def extract_enf(self, mean_per_superpixel, mode='mean') -> Tuple[np.ndarray, np.ndarray]:
         if mode == 'diff':
             diff = np.diff(mean_per_superpixel, axis=1)
             representative = np.mean(diff, axis=0)
@@ -111,7 +113,7 @@ class ENFSuperpixelAnalyzer:
             representative = np.mean(self.__filter_superpixel(mean_per_superpixel), axis=0)
         return self.extract_enf_mean_per_frame(representative)
 
-    def extract_enf_mean_per_frame(self, mean_per_frame):
+    def extract_enf_mean_per_frame(self, mean_per_frame) -> Tuple[np.ndarray, np.ndarray]:
         sos = butter(self.__bandpass_order,
                      [(self.__expected_enf_frequency_in_hz - self.__bandpass_width) / (.5 * self.__fps_real),
                       (self.__expected_enf_frequency_in_hz + self.__bandpass_width) / (.5 * self.__fps_real)],
@@ -141,12 +143,12 @@ class ENFSuperpixelAnalyzer:
 
     def __correlation_plot(self, correlated, description=""):
         if self.__show_plots or self.__save_data:
-            plt.figure()
+            plt.figure(description)
             plt.plot(correlated)
             plt.title(f"correlation {description}")
             self.__save_plot("correlation")
             if self.__show_plots:
-                plt.show()
+                plt.show(block=False)
             else:
                 plt.close()
 
