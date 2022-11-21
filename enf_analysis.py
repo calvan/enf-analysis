@@ -1,5 +1,5 @@
 import argparse
-from pathlib import Path
+from sys import version_info
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -107,11 +107,14 @@ def process_enf_analysis(mean_per_superpixel, config: ENFAnalysisConfig):
 
 
 if __name__ == "__main__":
+    if version_info < (3, 9):
+        logger.error("Minimum Python version required is 3.9")
+        exit()
     plt.rcParams['figure.figsize'] = [9.8, 5.5]
     config = parse_arguments()
     video_file = config.video_file
     if not Path(video_file).is_file():
-        logger.error(f"couldn't access viedo file: {video_file}")
+        logger.error(f"couldn't access video file: {video_file}")
         exit()
     mean_per_superpixel = process_video(video_file, config)
     process_enf_analysis(mean_per_superpixel, config)
