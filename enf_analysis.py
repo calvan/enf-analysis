@@ -16,7 +16,7 @@ def parse_arguments() -> ENFAnalysisConfig:
     argparser.add_argument("video_file", help="video file name to analyse")
     argparser.add_argument("-sr", "--samples-representative-enf", default=512, type=int,
                            help="number of samples (window size) for STFT (method: representative ENF), default: 512")
-    argparser.add_argument("-sm", "--samples-max-energy", default=512,
+    argparser.add_argument("-sm", "--samples-max-energy", default=1024,
                            help="number of samples (window size) for STFT (method: max energy), default: 1024",
                            type=int)
     argparser.add_argument("-dmd", "--disable-motion-detection", help="disable motion detection",
@@ -24,7 +24,7 @@ def parse_arguments() -> ENFAnalysisConfig:
     argparser.add_argument("-fvd", "--flush-video-data", help="don't use cached processed video data",
                            action="store_true")
     argparser.add_argument("-lt", "--lightness_threshold", type=int,
-                           help="controls which lightness value 0..255 is required to be included in an analysis, default: median / 2")
+                           help="controls which lightness value 0..255 is required to be included in an analysis, default: median")
     argparser.add_argument("-bo", "--bandpass-order", type=int, default=8, help="default: 8")
     argparser.add_argument("-bw", "--bandpass-width", type=float, default=.2, help="default: 0.2")
     argparser.add_argument("-nf", "--network-frequency", type=int, default=50, choices=[50, 60],
@@ -108,7 +108,7 @@ def process_enf_analysis(mean_per_superpixel, config: ENFAnalysisConfig):
 
 if __name__ == "__main__":
     if version_info < (3, 9):
-        logger.error("Minimum Python version required is 3.9")
+        logger.error("Minimum required Python version is 3.9")
         exit()
     plt.rcParams['figure.figsize'] = [9.8, 5.5]
     config = parse_arguments()

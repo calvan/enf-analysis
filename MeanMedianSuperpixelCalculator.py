@@ -10,7 +10,6 @@ logger.setLevel(LOGGER_LEVEL)
 
 class MeanMedianSuperpixelCalculator:
 
-    # TODO: remove DatasetVideoSuperpixel
     def __init__(self, threshold=None, mode='mean', ds_video_sp: DatasetVideoSuperpixel = None):
         self.__threshold = threshold
         self.__ds_video_sp = ds_video_sp
@@ -30,7 +29,6 @@ class MeanMedianSuperpixelCalculator:
         return disabled_superpixels
 
     def initialize(self, segmented_superpixel, total_nr_frames):
-        # self.__mean = np.zeros()
         segmented_superpixel_1d = np.reshape(segmented_superpixel, -1)
         self.__superpixel_indices = np.unique(segmented_superpixel_1d)
         for i in self.__superpixel_indices:
@@ -44,17 +42,13 @@ class MeanMedianSuperpixelCalculator:
         return self.__threshold
 
     def first_frame(self, frame):
-        # lab = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
-        # luminance = lab[:, :, 0].flatten()
-        # v = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        # luminance = v[:, :, 2].flatten()
         g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         luminance = g.flatten()
         if self.__threshold is None:
             self.__threshold = int(np.median(luminance))  # int(np.median(luminance) / 3)
         elif np.max(luminance) < self.__threshold:
             logger.warning(
-                f"threshold greater than brightest spot! threshold: {self.__threshold}, brightest spor: {np.max(luminance)}")
+                f"threshold greater than brightest spot! threshold: {self.__threshold}, brightest spot: {np.max(luminance)}")
             self.__threshold = int(np.median(luminance))  # int(np.median(luminance) / 3)
             logger.warning(f"using auto threshold {self.__threshold}")
             if self.__ds_video_sp is not None:
@@ -75,10 +69,6 @@ class MeanMedianSuperpixelCalculator:
         self.__current_frame += 1
 
     def next_frame(self, frame):
-        # lab = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
-        # luminance = lab[:, :, 0].flatten()
-        # v = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        # luminance = v[:, :, 2].flatten()
         g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         luminance = g.flatten()
         for i in self.__selected_superpixels:
@@ -90,14 +80,6 @@ class MeanMedianSuperpixelCalculator:
     def __add_mean_median(self, i, superpixel_mean_intensity, superpixel_median_intensity):
         self.__superpixel_regions_mean[(i, self.__current_frame)] = superpixel_mean_intensity
         self.__superpixel_regions_median[(i, self.__current_frame)] = superpixel_median_intensity
-
-    def __calc_lab(self, image_lab):
-        luminance = image_lab[:, :, 0].flatten()
-        return self.__calc(luminance)
-
-    def __calc_hsv(self, image_hsv):
-        value_channel = image_hsv[:, :, 2].flatten()
-        return self.__calc(value_channel)
 
     def get_median_per_superpixel(self, superpixel_indices):
         return self.__superpixel_regions_median[np.add(np.where(superpixel_indices), 1)[0]]
