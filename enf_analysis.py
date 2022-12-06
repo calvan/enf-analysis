@@ -69,7 +69,7 @@ def process_video(video_file: str, config: ENFAnalysisConfig):
         mean_per_superpixel = video_processor.process_video(video_file)
     video.expected_enf_frequency = calc_alias(config.network_frequency, video.fps_real)
     logger.info(f'Calculated alias frequency for ENF at {video.expected_enf_frequency} Hz')
-    if video.expected_enf_frequency <= 0:
+    if video.expected_enf_frequency <= (0 + config.bandpass_width):
         logger.warning(f"ENF analysis not possible. Alias frequency is at {video.expected_enf_frequency} Hz")
         exit()
     return mean_per_superpixel
