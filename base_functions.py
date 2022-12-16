@@ -18,13 +18,14 @@ DESTINATION_COMPRESSION = "compression"
 
 
 def get_base_path() -> str:
-    if platform == "linux" or platform == "linux2":
-        base_path = "/media/internet/ext_1TB/thesis/storage"
-    elif platform == "win32":
-        base_path = "B:/thesis/storage"
-    else:
-        base_path = "/Volumes/ext_1TB/thesis/storage"
-    return base_path
+    return os.getcwd()
+    # if platform == "linux" or platform == "linux2":
+    #     base_path = "."
+    # elif platform == "win32":
+    #     base_path = "."
+    # else:
+    #     base_path = "."
+    # return base_path
 
 
 def calc_alias(freq_power, freq_sample):
@@ -38,7 +39,7 @@ def calc_alias(freq_power, freq_sample):
 
 
 def get_input_path() -> str:
-    return f'{get_base_path()}/input'
+    return f'{get_base_path()}/data'
 
 
 def get_destination_path(filename, directory=None):
@@ -57,7 +58,7 @@ def get_timestamp_diff(video_ts, matched_ts):
 
 
 def get_enf_truth_path():
-    return f'{get_base_path()}/enf_data'
+    return f'{get_base_path()}/data'
 
 
 def read_csv(csv_file) -> pd.Series:
@@ -66,13 +67,11 @@ def read_csv(csv_file) -> pd.Series:
     return ground_truth.set_index('time').squeeze()
 
 
-#
-#
-# def slice_csv_data(csv_data, timestamp, enf_length, offset=30):
-#     start = csv_data.index.get_loc(timestamp)
-#     end = start + enf_length + offset
-#     start -= offset
-#     return csv_data[start:end]
+def slice_csv_data(csv_data, timestamp, enf_length, offset=30):
+    start = csv_data.index.get_loc(timestamp)
+    end = start + enf_length + offset
+    start -= offset
+    return csv_data[start:end]
 
 
 def create_directories(destination_dir):
